@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Windows builds
+          - goos: windows
+            goarch: amd64
+            suffix: .exe
+          - goos: windows
+            goarch: "386"
+            suffix: .exe
+          # Linux builds
+          - goos: linux
+            goarch: amd64
+            suffix: ""
+          - goos: linux
+            goarch: "386"
+            suffix: ""
+          - goos: linux
+            goarch: arm64
+            suffix: ""
+          # macOS builds
+          - goos: darwin
+            goarch: amd64
+            suffix: ""
+          - goos: darwin
+            goarch: arm64
+            suffix: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install UPX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx-ucl
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          BINARY_NAME="augment-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.suffix }}"
+          echo "Building ${BINARY_NAME}"
+          go build -ldflags="-s -w" -o "${BINARY_NAME}" cmd/cli.go
+          echo "BINARY_NAME=${BINARY_NAME}" >> $GITHUB_ENV
+
+      - name: Compress binary with UPX
+        run: |
+          echo "Compressing ${BINARY_NAME} with UPX"
+          upx --best --lzma "${BINARY_NAME}"
+          ls -la "${BINARY_NAME}"
+
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: ${{ env.BINARY_NAME }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: binaries
+          path: ./binaries
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | sed -n '2p')
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+
+          echo "Generating changelog from ${PREVIOUS_TAG} to ${CURRENT_TAG}"
+
+          # Generate changelog
+          if [ -z "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          # Release ${CURRENT_TAG}
+
+          ## What's Changed
+          ${CHANGELOG}
+
+          ## Downloads
+          Choose the appropriate binary for your platform:
+
+          ### Windows
+          - **augment-windows-amd64.exe** - Windows 64-bit
+          - **augment-windows-386.exe** - Windows 32-bit
+
+          ### Linux
+          - **augment-linux-amd64** - Linux 64-bit
+          - **augment-linux-386** - Linux 32-bit
+          - **augment-linux-arm64** - Linux ARM64
+
+          ### macOS
+          - **augment-darwin-amd64** - macOS Intel
+          - **augment-darwin-arm64** - macOS Apple Silicon (M1/M2)
+
+          ## Installation
+          1. Download the appropriate binary for your platform
+          2. Make it executable (Linux/macOS): \`chmod +x augment-*\`
+          3. Move to your PATH or run directly
+
+          ## Usage
+          \`\`\`bash
+          # Show help
+          ./augment --help
+
+          # Load coding prompt
+          ./augment coding
+
+          # Load designer prompt
+          ./augment designer
+          \`\`\`
+
+          All binaries are compressed with UPX for optimal size and performance.
+          EOF
+
+          echo "CURRENT_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.CURRENT_TAG }}
+          name: Release ${{ env.CURRENT_TAG }}
+          body_path: release_notes.md
+          files: ./binaries/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
