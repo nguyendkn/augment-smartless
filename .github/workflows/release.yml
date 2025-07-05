@@ -77,9 +77,9 @@ jobs:
           ls -la "${BINARY_NAME}"
 
       - name: Upload binary as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: binaries
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
           path: ${{ env.BINARY_NAME }}
 
   release:
@@ -93,10 +93,10 @@ jobs:
           fetch-depth: 0
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: binaries
           path: ./binaries
+          merge-multiple: true
 
       - name: Generate changelog
         id: changelog
@@ -165,7 +165,7 @@ jobs:
           tag_name: ${{ env.CURRENT_TAG }}
           name: Release ${{ env.CURRENT_TAG }}
           body_path: release_notes.md
-          files: ./binaries/*
+          files: ./binaries/**/*
           draft: false
           prerelease: false
         env:
