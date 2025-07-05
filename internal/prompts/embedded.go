@@ -23,25 +23,25 @@ func GetPrompt(name string) (string, error) {
 // GetAvailablePrompts returns a map of all available prompts
 func GetAvailablePrompts() map[string]PromptInfo {
 	return map[string]PromptInfo{
-		"coding": {
-			Name:        "coding",
-			Description: "Software development assistant prompt with systematic research-driven development approaches",
-			Content:     getCodingPrompt(),
+		"v0": {
+			Name:        "v0",
+			Description: "Vercel's AI-powered assistant for web development with Next.js and React",
+			Content:     getV0Prompt(),
 		},
-		"coder": {
-			Name:        "coder",
-			Description: "Alternative coding prompt (alias for coding)",
-			Content:     getCodingPrompt(),
-		},
-		"designer": {
-			Name:        "designer",
-			Description: "UI/UX design assistant prompt",
-			Content:     getDesignerPrompt(),
+		"lovable": {
+			Name:        "lovable",
+			Description: "AI editor for creating and modifying web applications with real-time preview",
+			Content:     getLovablePrompt(),
 		},
 	}
 }
 
-// GetCodingPrompt returns the embedded coding prompt content (for backward compatibility)
-func GetCodingPrompt() string {
-	return getCodingPrompt()
+// GetV0Prompt returns the embedded v0 prompt content (for backward compatibility)
+func GetV0Prompt() string {
+	return getV0Prompt()
+}
+
+// GetLovablePrompt returns the embedded lovable prompt content (for backward compatibility)
+func GetLovablePrompt() string {
+	return getLovablePrompt()
 }

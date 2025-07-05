@@ -65,14 +65,13 @@ Options:
 
 Examples:
   augment --help     Show this help
-  augment coding     Load embedded coding prompt to .augment-guidelines
-  augment coder      Load embedded coding prompt (alias) to .augment-guidelines
-  augment designer   Load embedded designer prompt to .augment-guidelines
+  augment v0         Load embedded v0 prompt to .augment-guidelines
+  augment lovable    Load embedded lovable prompt to .augment-guidelines
+  augment coding     Load prompts with selection menu
 
 Available embedded prompts:
-  - coding: Software development assistant with systematic workflows
-  - coder: Alias for coding prompt
-  - designer: UI/UX design assistant prompt`,
+  - v0: Vercel's AI-powered assistant for web development with Next.js and React
+  - lovable: AI editor for creating and modifying web applications with real-time preview`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Display ASCII art banner
 			banner := figure.NewFigure("AUGMENT CODE CLI", "big", true)
@@ -88,6 +87,8 @@ Available embedded prompts:
 	rootCmd.Flags().BoolP("version", "v", false, "Show version information")
 
 	// Add subcommands
+	rootCmd.AddCommand(commands.NewV0Command())
+	rootCmd.AddCommand(commands.NewLovableCommand())
 	rootCmd.AddCommand(commands.NewCodingCommand())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -98,7 +99,7 @@ Available embedded prompts:
 
 // isSubcommand checks if the given argument is a known subcommand
 func isSubcommand(arg string) bool {
-	subcommands := []string{"coding", "help", "completion"}
+	subcommands := []string{"v0", "lovable", "coding", "help", "completion"}
 	for _, cmd := range subcommands {
 		if arg == cmd {
 			return true
