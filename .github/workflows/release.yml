@@ -73,8 +73,15 @@ jobs:
       - name: Compress binary with UPX
         run: |
           echo "Compressing ${BINARY_NAME} with UPX"
-          upx --best --lzma "${BINARY_NAME}"
-          ls -la "${BINARY_NAME}"
+          if [[ "${{ matrix.goos }}" == "darwin" ]]; then
+            echo "Skipping UPX compression for macOS binary (not supported)"
+            echo "macOS binary size:"
+            ls -la "${BINARY_NAME}"
+          else
+            upx --best --lzma "${BINARY_NAME}"
+            echo "Compressed binary size:"
+            ls -la "${BINARY_NAME}"
+          fi
 
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
@@ -154,7 +161,8 @@ jobs:
           ./augment designer
           \`\`\`
 
-          All binaries are compressed with UPX for optimal size and performance.
+          Windows and Linux binaries are compressed with UPX for optimal size and performance.
+          macOS binaries are not compressed due to UPX compatibility limitations.
           EOF
 
           echo "CURRENT_TAG=${CURRENT_TAG}" >> $GITHUB_ENV
