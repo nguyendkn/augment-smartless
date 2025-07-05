@@ -67,7 +67,6 @@ Examples:
   augment --help     Show this help
   augment v0         Load embedded v0 prompt to .augment-guidelines
   augment lovable    Load embedded lovable prompt to .augment-guidelines
-  augment coding     Load prompts with selection menu
 
 Available embedded prompts:
   - v0: Vercel's AI-powered assistant for web development with Next.js and React
@@ -89,7 +88,6 @@ Available embedded prompts:
 	// Add subcommands
 	rootCmd.AddCommand(commands.NewV0Command())
 	rootCmd.AddCommand(commands.NewLovableCommand())
-	rootCmd.AddCommand(commands.NewCodingCommand())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -99,7 +97,7 @@ Available embedded prompts:
 
 // isSubcommand checks if the given argument is a known subcommand
 func isSubcommand(arg string) bool {
-	subcommands := []string{"v0", "lovable", "coding", "help", "completion"}
+	subcommands := []string{"v0", "lovable", "help", "completion"}
 	for _, cmd := range subcommands {
 		if arg == cmd {
 			return true
